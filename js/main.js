@@ -1,10 +1,7 @@
 'use strict';
 
 var localStream;
-var remoteStream;
-var turnReady;
-
-var idToUserInfo = {}; // UserInfo = {Connection, DOM Object}
+var idToConn = {};
 
 var iceConfig = {
   'iceServers': [
@@ -66,27 +63,25 @@ socket.on('message', function(packedMessage) {
   console.log('Client received message:', packedMessage);
   var[sender, message] = packedMessage;
   if (message === 'got user media') {
-    var newConn = createConnection();
-    idToUserInfo[sender] = newConn;
+    var newConn = createConnection(sender);
     doCall(newConn);
   } else if (message.type === 'offer') {
     // TODO : check duplicated offer
-    var newConn = createConnection();
-    idToUserInfo[sender] = newConn;
+    var newConn = createConnection(sender);
     newConn.setRemoteDescription(new RTCSessionDescription(message));
     doAnswer(newConn);
   } else if (message.type === 'answer') {
-    if (sender in idToUserInfo) {
-      var conn = idToUserInfo[sender];
+    if (sender in idToConn) {
+      var conn = idToConn[sender];
       conn.setRemoteDescription(new RTCSessionDescription(message));
     }
   } else if (message.type === 'candidate') {
-    if (sender in idToUserInfo) {
+    if (sender in idToConn) {
       var candidate = new RTCIceCandidate({
         sdpMLineIndex: message.label,
         candidate: message.candidate
       });
-      var conn = idToUserInfo[sender];
+      var conn = idToConn[sender];
       conn.addIceCandidate(candidate);
     }
   } else if (message === 'bye') {
@@ -115,17 +110,20 @@ function gotStream(stream) {
   sendMessage('got user media');
 }
 
-function createConnection() {
+function createConnection(sender) {
   var newConn = null
   console.log('>>>>>>> createConnection() ', localStream);
   if (typeof localStream !== 'undefined') {
     console.log('>>>>>> creating peer connection');
     newConn = new RTCPeerConnection(iceConfig);
+    newConn.videoDOM = createVideoDOM(sender);
     newConn.onicecandidate = handleIceCandidate;
-    newConn.onaddstream = handleRemoteStreamAdded;
-    newConn.onremovestream = handleRemoteStreamRemoved;
+    newConn.onaddstream = (event) => {handleRemoteStreamAdded(newConn.videoDOM, event);};
+    newConn.onremovestream = (event) => {handleRemoteStreamRemoved(newConn.videoDOM, event);};
     newConn.addStream(localStream);
     console.log('Created RTCPeerConnnection');
+
+    idToConn[sender] = newConn;
   }
 
   return newConn;
@@ -135,7 +133,6 @@ window.onbeforeunload = function() {
   hangup();
 };
 
-/////////////////////////////////////////////////////////
 function handleIceCandidate(event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
@@ -177,37 +174,40 @@ function onCreateSessionDescriptionError(error) {
   trace('Failed to create session description: ' + error.toString());
 }
 
-function handleRemoteStreamAdded(event) {
+function handleRemoteStreamAdded(dom, event) {
   console.log('Remote stream added.');
-
-  // TODO : create remote video 
-  remoteStream = event.stream;
-  remoteVideo.srcObject = remoteStream;
+  dom.srcObject = event.stream;
 }
 
-function appendRemoteVideo() {
- // Return video object
-}
-
-function handleRemoteStreamRemoved(event) {
+function handleRemoteStreamRemoved(dom, event) {
   console.log('Remote stream removed. Event: ', event);
+  document.getElementById('videos').removeChild(dom);
 }
 
 function hangup() {
   console.log('Hanging up.');
-  for (var id in idToUserInfo) {
-    var conn = idToUserInfo[id];
+  for (var id in idToConn) {
+    var conn = idToConn[id];
     conn.close();
   }
   sendMessage('bye');
 }
 
 function handleRemoteHangup(id) {
-  if (id in idToUserInfo) {
+  if (id in idToConn) {
     console.log('Other said bye.');
-    var conn = idToUserInfo[id];
+    var conn = idToConn[id];
     conn.close();
-    delete idToUserInfo[id];
+    document.getElementById('videos').removeChild(conn.videoDOM);
+    delete idToConn[id];
   }
 }
 
+function createVideoDOM(id) {
+  var node = document.createElement("video");
+  node.id = id;
+  node.autoplay = true;
+  node.playsinline = true;
+  document.getElementById('videos').appendChild(node);
+  return node;
+}
