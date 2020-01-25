@@ -1,9 +1,23 @@
 {
-  "name": "webrtc-codelab",
+  "name": "voicechat",
   "version": "0.0.1",
-  "description": "WebRTC codelab",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storykim/voicechat.git"
+  },
+  "author": "Donghwa Kim",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/storykim/voicechat/issues"
+  },
+  "homepage": "https://github.com/storykim/voicechat#readme",
   "dependencies": {
-    "node-static": "^0.7.10",
-    "socket.io": "^1.2.0"
+    "node-static": "^0.7.11",
+    "socket.io": "^2.3.0"
   }
 }
