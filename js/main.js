@@ -196,7 +196,6 @@ function hangup() {
     var conn = idToConn[id];
     conn.close();
   }
-  broadcastMessage('bye');
 }
 
 function handleRemoteHangup(id) {

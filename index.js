@@ -45,8 +45,8 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function(message) {
-    // TODO : say bye
     delete idToConnMap[socket.userId];
+    socket.broadcast.emit('message', [socket.userId, 'bye']);
   });
 
 
@@ -82,9 +82,4 @@ io.sockets.on('connection', function(socket) {
       });
     }
   });
-
-  socket.on('bye', function(){
-    console.log('received bye');
-  });
-
 });
