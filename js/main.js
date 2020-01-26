@@ -53,9 +53,14 @@ socket.on('log', function(array) {
 
 ////////////////////////////////////////////////
 
-function sendMessage(message) {
-  console.log('Client sending message: ', message);
-  socket.emit('message', message);
+function broadcastMessage(message) {
+  console.log('Client broadcasting message: ', message);
+  socket.emit('broadcast', message);
+}
+
+function sendMessage(target, message) {
+  console.log('Client sending message: ', target, message);
+  socket.emit('message', [target, message]);
 }
 
 // This client receives a message
@@ -107,7 +112,7 @@ function gotStream(stream) {
   console.log('Adding local stream.');
   localStream = stream;
   localVideo.srcObject = stream;
-  sendMessage('got user media');
+  broadcastMessage('got user media');
 }
 
 function createConnection(sender) {
@@ -117,7 +122,8 @@ function createConnection(sender) {
     console.log('>>>>>> creating peer connection');
     newConn = new RTCPeerConnection(iceConfig);
     newConn.videoDOM = createVideoDOM(sender);
-    newConn.onicecandidate = handleIceCandidate;
+    newConn.senderID = sender;
+    newConn.onicecandidate = (event) => {handleIceCandidate(newConn, event);};
     newConn.onaddstream = (event) => {handleRemoteStreamAdded(newConn.videoDOM, event);};
     newConn.onremovestream = (event) => {handleRemoteStreamRemoved(newConn.videoDOM, event);};
     newConn.addStream(localStream);
@@ -133,10 +139,10 @@ window.onbeforeunload = function() {
   hangup();
 };
 
-function handleIceCandidate(event) {
+function handleIceCandidate(conn, event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
-    sendMessage({
+    sendMessage(conn.senderID, {
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -167,7 +173,7 @@ function doAnswer(conn) {
 function setLocalAndSendMessage(conn, sessionDescription) {
   conn.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
-  sendMessage(sessionDescription);
+  sendMessage(conn.senderID, sessionDescription);
 }
 
 function onCreateSessionDescriptionError(error) {
@@ -190,7 +196,7 @@ function hangup() {
     var conn = idToConn[id];
     conn.close();
   }
-  sendMessage('bye');
+  broadcastMessage('bye');
 }
 
 function handleRemoteHangup(id) {

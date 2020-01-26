@@ -17,6 +17,7 @@ function generateId() {
 };
 
 var idToConnMap = {};
+const ROOM_CAPACITY = 4;
 
 var io = socketIO.listen(app);
 io.sockets.on('connection', function(socket) {
@@ -30,11 +31,24 @@ io.sockets.on('connection', function(socket) {
     socket.emit('log', array);
   }
 
-  socket.on('message', function(message) {
-    log('Client said: ', message);
+  socket.on('message', function(packedMessage) {
+    var[target, message] = packedMessage;
+    log('Client said: ', target, message);
+    if (target in idToConnMap) {
+      idToConnMap[target].emit('message', [socket.userId, message]);
+    }
+  });
+  
+  socket.on('broadcast', function(message) {
     // TODO: for a real app, would be room-only (not broadcast)
     socket.broadcast.emit('message', [socket.userId, message]);
   });
+
+  socket.on('disconnect', function(message) {
+    // TODO : say bye
+    delete idToConnMap[socket.userId];
+  });
+
 
   socket.on('create or join', function(room) {
     log('Received request to create or join room ' + room);
@@ -47,7 +61,7 @@ io.sockets.on('connection', function(socket) {
       socket.join(room);
       log('Client ID ' + socket.id + ' created room ' + room);
       socket.emit('created', room, socket.id);
-    } else if (numClients === 1) {
+    } else if (numClients < ROOM_CAPACITY) {
       log('Client ID ' + socket.id + ' joined room ' + room);
       io.sockets.in(room).emit('join', room);
       socket.join(room);
