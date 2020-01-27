@@ -10,14 +10,6 @@ var iceConfig = {
   ]
 };
 
-// Set up audio and video regardless of what devices are present.
-var sdpConstraints = {
-  offerToReceiveAudio: true,
-  offerToReceiveVideo: true
-};
-
-/////////////////////////////////////////////
-
 var room = 'foo';
 // Could prompt for room name:
 // room = prompt('Enter room name:');
@@ -97,11 +89,9 @@ socket.on('message', function(packedMessage) {
 ////////////////////////////////////////////////////
 
 var localVideo = document.querySelector('#localVideo');
-var remoteVideo = document.querySelector('#remoteVideo');
 
 navigator.mediaDevices.getUserMedia({
-  audio: false,
-  video: true
+  audio: true
 })
 .then(gotStream)
 .catch(function(e) {
@@ -121,11 +111,11 @@ function createConnection(sender) {
   if (typeof localStream !== 'undefined') {
     console.log('>>>>>> creating peer connection');
     newConn = new RTCPeerConnection(iceConfig);
-    newConn.videoDOM = createVideoDOM(sender);
+    newConn.userDOM = createUserDOM(sender);
     newConn.senderID = sender;
     newConn.onicecandidate = (event) => {handleIceCandidate(newConn, event);};
-    newConn.onaddstream = (event) => {handleRemoteStreamAdded(newConn.videoDOM, event);};
-    newConn.onremovestream = (event) => {handleRemoteStreamRemoved(newConn.videoDOM, event);};
+    newConn.onaddstream = (event) => {handleRemoteStreamAdded(newConn.userDOM, event);};
+    newConn.onremovestream = (event) => {handleRemoteStreamRemoved(newConn.userDOM, event);};
     newConn.addStream(localStream);
     console.log('Created RTCPeerConnnection');
 
@@ -182,7 +172,7 @@ function onCreateSessionDescriptionError(error) {
 
 function handleRemoteStreamAdded(dom, event) {
   console.log('Remote stream added.');
-  dom.srcObject = event.stream;
+  dom.lastElementChild.srcObject = event.stream;
 }
 
 function handleRemoteStreamRemoved(dom, event) {
@@ -203,16 +193,36 @@ function handleRemoteHangup(id) {
     console.log('Other said bye.');
     var conn = idToConn[id];
     conn.close();
-    document.getElementById('videos').removeChild(conn.videoDOM);
+    document.getElementById('videos').removeChild(conn.userDOM);
     delete idToConn[id];
   }
 }
 
-function createVideoDOM(id) {
-  var node = document.createElement("video");
+function createUserDOM(id) {
+  var node = document.createElement("div.row");
   node.id = id;
-  node.autoplay = true;
-  node.playsinline = true;
+
+  var label = document.createElement("label");
+  label.innerText = id; // TODO : nickname
+
+  var audio = document.createElement("audio");
+  audio.volume = 0.75;
+  audio.autoplay = true;
+  audio.playsinline = true;
+
+  var slider = document.createElement("input");
+  slider.id = 'slider' + id;
+  slider.type = 'range';
+  slider.min = 0;
+  slider.max = 100;
+  slider.value = 75;
+  slider.oninput = function() {
+    audio.volume = slider.value / 100;
+  }
+  node.appendChild(label);
+  node.appendChild(slider);
+  node.appendChild(audio);
+
   document.getElementById('videos').appendChild(node);
   return node;
 }

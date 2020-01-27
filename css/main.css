@@ -9,3 +9,12 @@ video {
   -webkit-transform:rotateY(180deg); /* Safari and Chrome */
   -moz-transform:rotateY(180deg); /* Firefox */
 }
+
+label {
+  float: left;
+  margin-right: 5px;
+}
+
+input[type=range] {
+  width: fit-content;
+}

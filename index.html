@@ -2,9 +2,13 @@
 <html>
 
 <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Realtime communication with WebRTC</title>
 
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/main.css" />
 
 </head>
@@ -12,9 +16,13 @@
 <body>
 
   <h1>Realtime communication with WebRTC</h1>
-
-  <div id="videos">
-    <video id="localVideo" autoplay muted playsinline></video>
+  <div class="container">
+    <div id="videos" class="col-md-3">
+      <div class="row">
+        <label>(Myself)</label>
+        <video id="localVideo" autoplay muted playsinline></video>
+      </div>
+    </div>
   </div>
 
   <!-- This file is automatically added/served when running "node index.js". -->
