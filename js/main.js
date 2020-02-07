@@ -87,9 +87,6 @@ socket.on('message', function(packedMessage) {
 });
 
 ////////////////////////////////////////////////////
-
-var localVideo = document.querySelector('#localVideo');
-
 navigator.mediaDevices.getUserMedia({
   audio: true
 })
@@ -101,7 +98,6 @@ navigator.mediaDevices.getUserMedia({
 function gotStream(stream) {
   console.log('Adding local stream.');
   localStream = stream;
-  localVideo.srcObject = stream;
   broadcastMessage('got user media');
 }
 

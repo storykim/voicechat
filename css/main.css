@@ -2,14 +2,6 @@ body {
   font-family: sans-serif;
 }
 
-video {
-  max-width: 100%;
-  width: 320px;
-  transform: rotateY(180deg);
-  -webkit-transform:rotateY(180deg); /* Safari and Chrome */
-  -moz-transform:rotateY(180deg); /* Firefox */
-}
-
 label {
   float: left;
   margin-right: 5px;
@@ -17,4 +9,26 @@ label {
 
 input[type=range] {
   width: fit-content;
+}
+
+.current-user {
+  border-bottom: 1px solid;
+  border-color: #c0d0ff;
+}
+
+.total-box {
+  border: 4px solid;
+  border-color: #c0d0ff;
+  border-radius: 16px;
+  min-height: 60%;
+}
+
+.left-box {
+  border-right: 4px solid;
+  border-color: #c0d0ff;
+  min-height: 80vh;
+}
+
+html, body {
+  height: 100%;
 }
