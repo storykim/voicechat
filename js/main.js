@@ -16,6 +16,38 @@ var room = 'foo';
 
 var socket = io.connect();
 
+var txtInput = document.getElementById("type-box");
+var sendButton = document.getElementById("send-button");
+txtInput.addEventListener("keyup", function(event) {
+  if (event.keyCode == 13) {
+    event.preventDefault();
+    sendButton.click();
+  }
+})
+
+sendButton.onclick = sendText;
+function sendText() {
+  var text = txtInput.value;
+  if (text !== "") {
+    addMessage('(Myself)', text);
+    for (var id in idToConn) {
+      var conn = idToConn[id];
+      conn.textChannel.send(text);
+    }
+    txtInput.value = ''
+  }
+}
+
+var chatContainer = document.getElementById("chat-container");
+function addMessage(senderName, message) {
+  var msg = document.createElement("div");
+  msg.classList.add('message');
+  msg.innerText = senderName + ' : ' + message;
+
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
 if (room !== '') {
   socket.emit('create or join', room);
   console.log('Attempted to create or  join room', room);
@@ -108,6 +140,13 @@ function createConnection(sender) {
     console.log('>>>>>> creating peer connection');
     newConn = new RTCPeerConnection(iceConfig);
     newConn.userDOM = createUserDOM(sender);
+    newConn.textChannel = newConn.createDataChannel('sendDataChannel', null);
+    newConn.ondatachannel = (event) => {
+      event.channel.onmessage = (event) => {
+      console.log("Data come");
+      addMessage(sender, event.data);
+      }
+    }
     newConn.senderID = sender;
     newConn.onicecandidate = (event) => {handleIceCandidate(newConn, event);};
     newConn.onaddstream = (event) => {handleRemoteStreamAdded(newConn.userDOM, event);};
@@ -195,7 +234,8 @@ function handleRemoteHangup(id) {
 }
 
 function createUserDOM(id) {
-  var node = document.createElement("div.row");
+  var node = document.createElement("div");
+  node.classList.add('row')
   node.id = id;
 
   var label = document.createElement("label");

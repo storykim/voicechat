@@ -39,9 +39,10 @@ html, body {
 }
 
 #chat-container {
-  height: 90%;
+  height: 80vh;
   width: 100%;
   background-color: aliceblue;
+  overflow-y: scroll;
 }
 
 #type-container {
