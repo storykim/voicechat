@@ -8,7 +8,7 @@
 
   <title>Voice Chat</title>
 
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
   <link rel="stylesheet" href="/css/main.css" />
 
 </head>
@@ -17,6 +17,7 @@
 
   <h1>Voice Chat</h1>
   <div class="container total-box">
+  <div class="row">
     <div id="videos" class="col-md-3 left-box">
       <div class="row current-user"><b>Current Users</b></div>
       <div class="row">
@@ -24,8 +25,14 @@
       </div>
     </div>
     <div id="chat" class="col-md-9 right-box">
-      WIP...
+      <div id="chat-container" class="row">
+        <textarea id="chat-box" disabled></textarea>
+      </div>
+      <div id="type-container" class="row">
+        <textarea id="type-box"></textarea>
+      </div>
     </div>
+  </div>
   </div>
 
   <!-- This file is automatically added/served when running "node index.js". -->

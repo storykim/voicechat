@@ -29,6 +29,20 @@ input[type=range] {
   min-height: 80vh;
 }
 
+.right-box {
+  min-height: 80vh;
+}
+
 html, body {
   height: 100%;
+}
+
+#chat-container {
+  height: 90%;
+  width: 100%;
+}
+
+#type-container {
+  height: 10%;
+  width: 100%;
 }
