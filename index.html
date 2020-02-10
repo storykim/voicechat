@@ -14,7 +14,19 @@
 </head>
 
 <body>
-
+  <div id="overlay">
+    <div class="marginer">
+    <h1>Voice Chat</h1>
+    <p>Simple voice chatting application with message service. <br/> For more information : <a href='https://github.com/storykim/voicechat'>https://github.com/storykim/voicechat</a>.</p>
+    
+    <h3>Please enter room number(7 digits) to create or join the room.</h3>
+    <div class="row d-flex justify-content-center">
+      <input id="roomnumber-input" pattern="\d{7}" required/>
+      <button id="roomnumber-button">Go!</button>
+    </div>
+  </div>
+  </div>
+  <div class='marginer'>
   <h1>Voice Chat</h1>
   <div class="container total-box">
   <div class="row">
@@ -33,7 +45,7 @@
       </div>
     </div>
   </div>
-  </div>
+  </div></div>
 
   <!-- This file is automatically added/served when running "node index.js". -->
   <script src="/socket.io/socket.io.js"></script>

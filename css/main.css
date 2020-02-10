@@ -53,6 +53,22 @@ body {
   background-color: whitesmoke;
 }
 
-#type-box {
-  /* width: 100%; */
+#overlay {
+  background-color: #c0d0ff;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  left: 0px;
+  z-index: 1000;
+}
+.marginer {
+  margin: 3rem auto;
+  max-width: 800px;
+}
+#roomnumber-input:valid {
+  color: green;
+}
+#roomnumber-input:invalid {
+  color: red;
 }

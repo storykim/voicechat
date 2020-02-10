@@ -10,70 +10,7 @@ var iceConfig = {
   ]
 };
 
-var room = "foo";
-// Could prompt for room name:
-// room = prompt('Enter room name:');
-
-var socket = io.connect();
-
-var txtInput = document.getElementById("type-box");
-var sendButton = document.getElementById("send-button");
-txtInput.addEventListener("keyup", function(event) {
-  if (event.keyCode == 13) {
-    event.preventDefault();
-    sendButton.click();
-  }
-});
-
-sendButton.onclick = sendText;
-function sendText() {
-  var text = txtInput.value;
-  if (text !== "") {
-    addMessage("(Myself)", text);
-    for (var id in idToConn) {
-      var conn = idToConn[id];
-      conn.textChannel.send(text);
-    }
-    txtInput.value = "";
-  }
-}
-
-var chatContainer = document.getElementById("chat-container");
-function addMessage(senderName, message) {
-  var msg = document.createElement("div");
-  msg.classList.add("message");
-  msg.innerText = senderName + " : " + message;
-
-  chatContainer.appendChild(msg);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-if (room !== "") {
-  socket.emit("create or join", room);
-  console.log("Attempted to create or  join room", room);
-}
-
-socket.on("created", function(room) {
-  console.log("Created room " + room);
-});
-
-socket.on("full", function(room) {
-  console.log("Room " + room + " is full");
-});
-
-// Other person join
-socket.on("join", function(room) {
-  console.log("Another peer made a request to join room " + room);
-});
-
-// I joined
-socket.on("joined", function(room) {
-  console.log("joined: " + room);
-});
-
-socket.on("log", function(array) {
-  console.log.apply(console, array);
-});
+var socket = null;
 
 ////////////////////////////////////////////////
 
@@ -87,47 +24,7 @@ function sendMessage(target, message) {
   socket.emit("message", [target, message]);
 }
 
-// This client receives a message
-socket.on("message", function(packedMessage) {
-  console.log("Client received message:", packedMessage);
-  var [sender, message] = packedMessage;
-  if (message === "got user media") {
-    var newConn = createConnection(sender);
-    doCall(newConn);
-  } else if (message.type === "offer") {
-    // TODO : check duplicated offer
-    var newConn = createConnection(sender);
-    newConn.setRemoteDescription(new RTCSessionDescription(message));
-    doAnswer(newConn);
-  } else if (message.type === "answer") {
-    if (sender in idToConn) {
-      var conn = idToConn[sender];
-      conn.setRemoteDescription(new RTCSessionDescription(message));
-    }
-  } else if (message.type === "candidate") {
-    if (sender in idToConn) {
-      var candidate = new RTCIceCandidate({
-        sdpMLineIndex: message.label,
-        candidate: message.candidate
-      });
-      var conn = idToConn[sender];
-      conn.addIceCandidate(candidate);
-    }
-  } else if (message === "bye") {
-    handleRemoteHangup(sender);
-  }
-});
-
 ////////////////////////////////////////////////////
-navigator.mediaDevices
-  .getUserMedia({
-    audio: true
-  })
-  .then(gotStream)
-  .catch(function(e) {
-    alert("getUserMedia() error: " + e.name);
-  });
-
 function gotStream(stream) {
   console.log("Adding local stream.");
   localStream = stream;
@@ -166,10 +63,6 @@ function createConnection(sender) {
 
   return newConn;
 }
-
-window.onbeforeunload = function() {
-  hangup();
-};
 
 function handleIceCandidate(conn, event) {
   console.log("icecandidate event: ", event);
@@ -270,3 +163,121 @@ function createUserDOM(id) {
   document.getElementById("videos").appendChild(node);
   return node;
 }
+
+function joinRoom(room) {
+  socket = io.connect();
+  navigator.mediaDevices
+    .getUserMedia({
+      audio: true
+    })
+    .then(gotStream)
+    .catch(function(e) {
+      alert("getUserMedia() error: " + e);
+    });
+
+  socket.emit("create or join", room);
+  console.log("Attempted to create or  join room", room);
+
+  socket.on("created", function(room) {
+    console.log("Created room " + room);
+  });
+
+  socket.on("full", function(room) {
+    console.log("Room " + room + " is full");
+  });
+
+  // Other person join
+  socket.on("join", function(room) {
+    console.log("Another peer made a request to join room " + room);
+  });
+
+  // I joined
+  socket.on("joined", function(room) {
+    console.log("joined: " + room);
+  });
+
+  socket.on("log", function(array) {
+    console.log.apply(console, array);
+  });
+
+  // This client receives a message
+  socket.on("message", function(packedMessage) {
+    console.log("Client received message:", packedMessage);
+    var [sender, message] = packedMessage;
+    if (message === "got user media") {
+      var newConn = createConnection(sender);
+      doCall(newConn);
+    } else if (message.type === "offer") {
+      // TODO : check duplicated offer
+      var newConn = createConnection(sender);
+      newConn.setRemoteDescription(new RTCSessionDescription(message));
+      doAnswer(newConn);
+    } else if (message.type === "answer") {
+      if (sender in idToConn) {
+        var conn = idToConn[sender];
+        conn.setRemoteDescription(new RTCSessionDescription(message));
+      }
+    } else if (message.type === "candidate") {
+      if (sender in idToConn) {
+        var candidate = new RTCIceCandidate({
+          sdpMLineIndex: message.label,
+          candidate: message.candidate
+        });
+        var conn = idToConn[sender];
+        conn.addIceCandidate(candidate);
+      }
+    } else if (message === "bye") {
+      handleRemoteHangup(sender);
+    }
+  });
+
+  txtInput.addEventListener("keyup", function(event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      sendButton.click();
+    }
+  });
+
+  sendButton.onclick = sendText;
+
+  window.onbeforeunload = function() {
+    hangup();
+  };
+}
+
+var txtInput = document.getElementById("type-box");
+var sendButton = document.getElementById("send-button");
+function sendText() {
+  var text = txtInput.value;
+  if (text !== "") {
+    addMessage("(Myself)", text);
+    for (var id in idToConn) {
+      var conn = idToConn[id];
+      conn.textChannel.send(text);
+    }
+    txtInput.value = "";
+  }
+}
+
+var chatContainer = document.getElementById("chat-container");
+function addMessage(senderName, message) {
+  var msg = document.createElement("div");
+  msg.classList.add("message");
+  msg.innerText = senderName + " : " + message;
+
+  chatContainer.appendChild(msg);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function main() {
+  document.getElementById("roomnumber-button").onclick = () => {
+    var roomInput = document.getElementById("roomnumber-input");
+    if (!roomInput.checkValidity()) {
+      return;
+    }
+    document.getElementById("overlay").remove();
+    joinRoom(roomInput.value);
+  };
+}
+
+main();

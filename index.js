@@ -42,17 +42,23 @@ io.sockets.on("connection", function(socket) {
   });
 
   socket.on("broadcast", function(message) {
-    // TODO: for a real app, would be room-only (not broadcast)
-    socket.broadcast.emit("message", [socket.userId, message]);
+    socket.broadcast.to(socket.room).emit("message", [socket.userId, message]);
   });
 
   socket.on("disconnect", function(message) {
     delete idToConnMap[socket.userId];
-    socket.broadcast.emit("message", [socket.userId, "bye"]);
+    socket.broadcast.to(socket.room).emit("message", [socket.userId, "bye"]);
   });
 
   socket.on("create or join", function(room) {
     log("Received request to create or join room " + room);
+
+    // Check validity
+    var valid = /^\d{7}/.test(room);
+    if (!valid) {
+      log("Invalid request to create or join room " + room);
+      return;
+    }
 
     var clientsInRoom = io.sockets.adapter.rooms[room];
     var numClients = clientsInRoom
@@ -64,14 +70,15 @@ io.sockets.on("connection", function(socket) {
       socket.join(room);
       log("Client ID " + socket.id + " created room " + room);
       socket.emit("created", room, socket.id);
+      socket.room = room;
     } else if (numClients < ROOM_CAPACITY) {
       log("Client ID " + socket.id + " joined room " + room);
       io.sockets.in(room).emit("join", room);
       socket.join(room);
       socket.emit("joined", room, socket.id);
       io.sockets.in(room).emit("ready");
+      socket.room = room;
     } else {
-      // TODO: max two clients
       socket.emit("full", room);
     }
   });
