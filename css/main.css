@@ -27,6 +27,7 @@ input[type="range"] {
   border-right: 4px solid;
   border-color: #c0d0ff;
   min-height: 80vh;
+  text-indent: 10px;
 }
 
 .right-box {
