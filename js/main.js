@@ -169,14 +169,6 @@ function createUserDOM(id) {
 
 function joinRoom(room, nickname) {
   socket = io.connect();
-  navigator.mediaDevices
-    .getUserMedia({
-      audio: true
-    })
-    .then(gotStream)
-    .catch(function(e) {
-      alert("getUserMedia() error: " + e);
-    });
 
   socket.emit("create or join", room, nickname);
   console.log("Attempted to create or  join room", room, nickname);
@@ -188,6 +180,14 @@ function joinRoom(room, nickname) {
     nicknameInfo = {};
     myID = userID;
     myJoinOrder = 0;
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: true
+      })
+      .then(gotStream)
+      .catch(function(e) {
+        alert("getUserMedia() error: " + e);
+      });
   });
 
   socket.on("full", function(room) {
@@ -205,6 +205,14 @@ function joinRoom(room, nickname) {
     myID = userID;
     nicknameInfo = currentNicknameInfo;
     myJoinOrder = joinOrder;
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: true
+      })
+      .then(gotStream)
+      .catch(function(e) {
+        alert("getUserMedia() error: " + e);
+      });
   });
 
   socket.on("log", function(array) {
