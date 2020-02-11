@@ -69,13 +69,13 @@ io.sockets.on("connection", function(socket) {
     if (numClients === 0) {
       socket.join(room);
       log("Client ID " + socket.id + " created room " + room);
-      socket.emit("created", room, socket.id);
+      socket.emit("created", room, socket.userId);
       socket.room = room;
     } else if (numClients < ROOM_CAPACITY) {
       log("Client ID " + socket.id + " joined room " + room);
       io.sockets.in(room).emit("join", room);
       socket.join(room);
-      socket.emit("joined", room, socket.id);
+      socket.emit("joined", room, socket.userId);
       io.sockets.in(room).emit("ready");
       socket.room = room;
     } else {

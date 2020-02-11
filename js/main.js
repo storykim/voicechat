@@ -2,6 +2,7 @@
 
 var localStream;
 var idToConn = {};
+var myID = null;
 
 var iceConfig = {
   iceServers: [
@@ -178,8 +179,9 @@ function joinRoom(room) {
   socket.emit("create or join", room);
   console.log("Attempted to create or  join room", room);
 
-  socket.on("created", function(room) {
+  socket.on("created", function(room, userID) {
     console.log("Created room " + room);
+    myID = userID;
   });
 
   socket.on("full", function(room) {
@@ -192,8 +194,9 @@ function joinRoom(room) {
   });
 
   // I joined
-  socket.on("joined", function(room) {
+  socket.on("joined", function(room, userID) {
     console.log("joined: " + room);
+    myID = userID;
   });
 
   socket.on("log", function(array) {
@@ -204,11 +207,10 @@ function joinRoom(room) {
   socket.on("message", function(packedMessage) {
     console.log("Client received message:", packedMessage);
     var [sender, message] = packedMessage;
-    if (message === "got user media") {
+    if (message === "got user media" && myID !== null && sender > myID) {
       var newConn = createConnection(sender);
       doCall(newConn);
     } else if (message.type === "offer") {
-      // TODO : check duplicated offer
       var newConn = createConnection(sender);
       newConn.setRemoteDescription(new RTCSessionDescription(message));
       doAnswer(newConn);
