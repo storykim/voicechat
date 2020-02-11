@@ -143,7 +143,7 @@ function createUserDOM(id) {
   node.id = id;
 
   var label = document.createElement("label");
-  label.innerText = id;
+  label.innerText = nicknameInfo[id];
 
   var audio = document.createElement("audio");
   audio.volume = 0.75;
@@ -181,6 +181,7 @@ function joinRoom(room, nickname) {
   socket.emit("create or join", room, nickname);
   console.log("Attempted to create or  join room", room, nickname);
   myNickname = nickname;
+  document.getElementById("myself-label").innerText = nickname + "(Myself)";
 
   socket.on("created", function(room, userID) {
     console.log("Created room " + room);
