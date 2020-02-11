@@ -1,5 +1,6 @@
 # Voicechat
 Simple P2P voicechat application based on [WebRTC](https://webrtc.org/).
+![Demo image](demo.png)
 
 # Requirements
 * Node.js
