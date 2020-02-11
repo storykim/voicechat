@@ -19,9 +19,10 @@
     <h1>Voice Chat</h1>
     <p>Simple voice chatting application with message service. <br/> For more information : <a href='https://github.com/storykim/voicechat'>https://github.com/storykim/voicechat</a>.</p>
     
-    <h3>Please enter room number(7 digits) to create or join the room.</h3>
+    <h3>Please enter room number(7 digits) and nickname(1~10 alphanumeric letters) to create or join the room.</h3>
     <div class="row d-flex justify-content-center">
-      <input id="roomnumber-input" pattern="\d{7}" required/>
+      <input id="roomnumber-input" pattern="\d{7}" placeholder="Room number" required/>
+      <input id="nickname-input" pattern="[A-Za-z0-9]{1,10}" placeholder="Nickname" required/>
       <button id="roomnumber-button">Go!</button>
     </div>
   </div>

@@ -3,6 +3,8 @@
 var localStream;
 var idToConn = {};
 var myID = null;
+var myNickname = null;
+var myJoinOrder = null;
 
 var iceConfig = {
   iceServers: [
@@ -12,6 +14,7 @@ var iceConfig = {
 };
 
 var socket = null;
+var nicknameInfo = null;
 
 ////////////////////////////////////////////////
 
@@ -29,7 +32,7 @@ function sendMessage(target, message) {
 function gotStream(stream) {
   console.log("Adding local stream.");
   localStream = stream;
-  broadcastMessage("got user media");
+  broadcastMessage({ type: "got user media", joinOrder: myJoinOrder });
 }
 
 function createConnection(sender) {
@@ -42,8 +45,7 @@ function createConnection(sender) {
     newConn.textChannel = newConn.createDataChannel("sendDataChannel", null);
     newConn.ondatachannel = event => {
       event.channel.onmessage = event => {
-        console.log("Data come");
-        addMessage(sender, event.data);
+        addMessage(nicknameInfo[sender], event.data);
       };
     };
     newConn.senderID = sender;
@@ -141,7 +143,7 @@ function createUserDOM(id) {
   node.id = id;
 
   var label = document.createElement("label");
-  label.innerText = id; // TODO : nickname
+  label.innerText = id;
 
   var audio = document.createElement("audio");
   audio.volume = 0.75;
@@ -165,7 +167,7 @@ function createUserDOM(id) {
   return node;
 }
 
-function joinRoom(room) {
+function joinRoom(room, nickname) {
   socket = io.connect();
   navigator.mediaDevices
     .getUserMedia({
@@ -176,12 +178,15 @@ function joinRoom(room) {
       alert("getUserMedia() error: " + e);
     });
 
-  socket.emit("create or join", room);
-  console.log("Attempted to create or  join room", room);
+  socket.emit("create or join", room, nickname);
+  console.log("Attempted to create or  join room", room, nickname);
+  myNickname = nickname;
 
   socket.on("created", function(room, userID) {
     console.log("Created room " + room);
+    nicknameInfo = {};
     myID = userID;
+    myJoinOrder = 0;
   });
 
   socket.on("full", function(room) {
@@ -189,14 +194,16 @@ function joinRoom(room) {
   });
 
   // Other person join
-  socket.on("join", function(room) {
-    console.log("Another peer made a request to join room " + room);
+  socket.on("join", function(userId, nickname) {
+    nicknameInfo[userId] = nickname;
   });
 
   // I joined
-  socket.on("joined", function(room, userID) {
+  socket.on("joined", function(room, userID, currentNicknameInfo, joinOrder) {
     console.log("joined: " + room);
     myID = userID;
+    nicknameInfo = currentNicknameInfo;
+    myJoinOrder = joinOrder;
   });
 
   socket.on("log", function(array) {
@@ -207,7 +214,11 @@ function joinRoom(room) {
   socket.on("message", function(packedMessage) {
     console.log("Client received message:", packedMessage);
     var [sender, message] = packedMessage;
-    if (message === "got user media" && myID !== null && sender > myID) {
+    if (
+      message.type === "got user media" &&
+      myJoinOrder !== null &&
+      myJoinOrder < message.joinOrder
+    ) {
       var newConn = createConnection(sender);
       doCall(newConn);
     } else if (message.type === "offer") {
@@ -228,7 +239,7 @@ function joinRoom(room) {
         var conn = idToConn[sender];
         conn.addIceCandidate(candidate);
       }
-    } else if (message === "bye") {
+    } else if (message.type === "bye") {
       handleRemoteHangup(sender);
     }
   });
@@ -252,7 +263,7 @@ var sendButton = document.getElementById("send-button");
 function sendText() {
   var text = txtInput.value;
   if (text !== "") {
-    addMessage("(Myself)", text);
+    addMessage(myNickname + "(Myself)", text);
     for (var id in idToConn) {
       var conn = idToConn[id];
       conn.textChannel.send(text);
@@ -274,11 +285,16 @@ function addMessage(senderName, message) {
 function main() {
   document.getElementById("roomnumber-button").onclick = () => {
     var roomInput = document.getElementById("roomnumber-input");
+    var nicknameInput = document.getElementById("nickname-input");
     if (!roomInput.checkValidity()) {
       return;
     }
+
+    if (!nicknameInput.checkValidity()) {
+      return;
+    }
     document.getElementById("overlay").remove();
-    joinRoom(roomInput.value);
+    joinRoom(roomInput.value, nicknameInput.value);
   };
 }
 

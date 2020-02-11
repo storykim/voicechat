@@ -66,9 +66,12 @@ body {
   margin: 3rem auto;
   max-width: 800px;
 }
-#roomnumber-input:valid {
+
+#roomnumber-input:valid,
+#nickname-input:valid {
   color: green;
 }
-#roomnumber-input:invalid {
+#roomnumber-input:invalid,
+#nickname-input:invalid {
   color: red;
 }

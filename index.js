@@ -23,8 +23,7 @@ const ROOM_CAPACITY = 4;
 
 var io = socketIO.listen(app);
 io.sockets.on("connection", function(socket) {
-  socket.userId = generateId();
-  idToConnMap[socket.userId] = socket;
+  idToConnMap[socket.id] = socket;
 
   // convenience function to log server messages on the client
   function log() {
@@ -37,26 +36,34 @@ io.sockets.on("connection", function(socket) {
     var [target, message] = packedMessage;
     log("Client said: ", target, message);
     if (target in idToConnMap) {
-      idToConnMap[target].emit("message", [socket.userId, message]);
+      idToConnMap[target].emit("message", [socket.id, message]);
     }
   });
 
   socket.on("broadcast", function(message) {
-    socket.broadcast.to(socket.room).emit("message", [socket.userId, message]);
+    socket.broadcast.to(socket.room).emit("message", [socket.id, message]);
   });
 
   socket.on("disconnect", function(message) {
-    delete idToConnMap[socket.userId];
-    socket.broadcast.to(socket.room).emit("message", [socket.userId, "bye"]);
+    delete idToConnMap[socket.id];
+    socket.broadcast
+      .to(socket.room)
+      .emit("message", [socket.id, { type: "bye" }]);
   });
 
-  socket.on("create or join", function(room) {
-    log("Received request to create or join room " + room);
+  socket.on("create or join", function(room, nickname) {
+    log("Received request to create or join room " + room + nickname);
 
     // Check validity
-    var valid = /^\d{7}/.test(room);
-    if (!valid) {
-      log("Invalid request to create or join room " + room);
+    var validRoom = /^\d{7}/.test(room);
+    if (!validRoom) {
+      log("Invalid room to create or join room " + room);
+      return;
+    }
+
+    var validNickname = /^[A-Za-z0-9]{1,10}/.test(nickname);
+    if (!validNickname) {
+      log("Invalid nickname to create or join room " + nickname);
       return;
     }
 
@@ -67,16 +74,32 @@ io.sockets.on("connection", function(socket) {
     log("Room " + room + " now has " + numClients + " client(s)");
 
     if (numClients === 0) {
+      socket.nickname = nickname;
       socket.join(room);
       log("Client ID " + socket.id + " created room " + room);
-      socket.emit("created", room, socket.userId);
+      socket.emit("created", room, socket.id);
       socket.room = room;
     } else if (numClients < ROOM_CAPACITY) {
-      log("Client ID " + socket.id + " joined room " + room);
-      io.sockets.in(room).emit("join", room);
+      var joinOrder = generateId();
+      socket.nickname = nickname;
+      log(
+        "Client ID " +
+          socket.id +
+          " joined room " +
+          room +
+          " " +
+          socket.nickname
+      );
+      io.sockets.in(room).emit("join", socket.id, socket.nickname);
+
+      var nicknameInfo = {};
+      for (var socketId in clientsInRoom.sockets) {
+        var socketInRoom = idToConnMap[socketId];
+        nicknameInfo[socketInRoom.id] = socketInRoom.nickname;
+      }
+
       socket.join(room);
-      socket.emit("joined", room, socket.userId);
-      io.sockets.in(room).emit("ready");
+      socket.emit("joined", room, socket.id, nicknameInfo, joinOrder);
       socket.room = room;
     } else {
       socket.emit("full", room);
